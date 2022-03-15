@@ -3,7 +3,13 @@ import { io } from 'socket.io-client';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Lobby = ({ setSocket, setServerMessage }) => {
+const Lobby = ({
+  setSocket,
+  setServerMessage,
+  setPlayerNum,
+  setIsTurn,
+  setHoles,
+}) => {
   const [userName, setUsername] = useState();
   const [roomName, setRoomName] = useState();
 
@@ -17,12 +23,31 @@ const Lobby = ({ setSocket, setServerMessage }) => {
         action: 'create',
       },
     });
+    setSocket(socket);
 
     socket.on('message', (m) => {
-      setServerMessage(m);
+      console.log(m);
+      if (m.includes('Error')) window.alert(m);
+      else setServerMessage(m);
     });
-    setSocket(socket);
-    navigate('/game');
+
+    socket.on('joined', (m) => {
+      setPlayerNum(m);
+      navigate('/game');
+    });
+
+    socket.on('turn', (m) => {
+      setIsTurn(m);
+      console.log(m);
+    });
+
+    socket.on('HOLES', (m) => {
+      m && setHoles(m);
+    });
+
+    socket.on('END', (m) => {
+      setServerMessage(`Winner is ${m.winner} by ${m.score[0]} `);
+    });
   };
   const joinRoom = () => {
     const socket = io('ws://localhost:65080', {
@@ -32,11 +57,30 @@ const Lobby = ({ setSocket, setServerMessage }) => {
         action: 'join',
       },
     });
-    socket.on('message', (m) => {
-      setServerMessage(m);
-    });
     setSocket(socket);
-    navigate('/game');
+
+    socket.on('message', (m) => {
+      console.log(m);
+      if (m.includes('Error')) window.alert(m);
+      else setServerMessage(m);
+    });
+
+    socket.on('joined', (m) => {
+      setPlayerNum(m);
+      navigate('/game');
+    });
+
+    socket.on('turn', (m) => {
+      setIsTurn(m);
+    });
+
+    socket.on('HOLES', (m) => {
+      m && setHoles(m);
+    });
+
+    socket.on('END', (m) => {
+      setServerMessage(`Winner is ${m.winner} by ${m.score[0]} `);
+    });
   };
 
   return (
